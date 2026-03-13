@@ -101,7 +101,7 @@ Typical run:
 
 ```bash
 . .venv/bin/activate
-python fashion_mnist_section2.py --epochs 10 --batch-size 128 --augment
+python fashion_mnist_section2.py --epochs 10 --batch-size 128 --augment --device cpu
 ```
 
 CPU-only run:
@@ -112,3 +112,6 @@ python fashion_mnist_section2.py --device cpu --epochs 15 --augment
 
 If the machine has a compatible NVIDIA driver, `--device auto` will pick CUDA; otherwise it falls back to CPU.
 
+## 9. Reproducibility Note (This Repository)
+
+In this environment, PyTorch is installed with CUDA support but CUDA is not available due to driver compatibility, so training runs on CPU. A 10-epoch run with the default CNN achieved `test_acc=0.9233` and saved artifacts under `runs/`.

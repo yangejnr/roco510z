@@ -66,6 +66,8 @@ Optional alternative counting mode:
 Use `python droplet_section1.py --help` for the full list. Practically:
 
 - `--auto-roi`: recommended for these high-speed videos; reduces false detections.
+- `--progress-every`: prints progress every N frames while running.
+- `--quiet`: suppresses stdout output (useful for batch runs).
 - `--outer-min-radius`, `--outer-max-radius`: constrain wrap size in pixels.
 - `--inner-min-radius`, `--inner-max-radius`: constrain inner size; inner is also capped to `0.9 * outer_r`.
 - `--max-outer-per-frame`: cap candidates per frame to limit false positives and runtime.
@@ -157,4 +159,3 @@ Open `annotated.mp4` to visually validate that:
 - Hough-based circle detection assumes roughly circular wraps/droplets; strongly non-circular shapes will degrade.
 - Tracker is greedy nearest-neighbor; if objects cross/overlap heavily, IDs may swap.
 - Blob COM depends on thresholding; if lighting changes drastically, consider adding a background subtractor or adaptive thresholding.
-

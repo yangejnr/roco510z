@@ -6,7 +6,7 @@ Design, Implementation, and Evaluation of a Fashion-MNIST Classifier Using PyTor
 
 ## Abstract
 
-This report describes the design and evaluation of an image classification model for the Fashion-MNIST dataset. The work implements a reproducible PyTorch pipeline that performs dataset loading and preprocessing, train/validation/test splitting, model training with regularisation, and final evaluation on a held-out test set. A compact convolutional neural network (CNN) with batch normalisation and dropout is trained using AdamW optimisation and a cosine learning-rate schedule. Model performance is assessed using accuracy, confusion matrix, and per-class precision/recall/F1-score. A one-epoch smoke run on CPU achieved 87.6% test accuracy, indicating that the selected architecture and optimisation scheme is capable of meeting the coursework target of exceeding 80% test accuracy with modest training time and hyperparameter tuning.
+This report describes the design and evaluation of an image classification model for the Fashion-MNIST dataset. The work implements a reproducible PyTorch pipeline that performs dataset loading and preprocessing, train/validation/test splitting, model training with regularisation, and final evaluation on a held-out test set. A compact convolutional neural network (CNN) with batch normalisation and dropout is trained using AdamW optimisation and a cosine learning-rate schedule. Model performance is assessed using accuracy, confusion matrix, and per-class precision/recall/F1-score. In this repository, a 10-epoch CPU run achieved 92.33% test accuracy, exceeding the coursework target of 80% and demonstrating that the selected architecture and optimisation scheme is effective.
 
 ## 1. Introduction
 
@@ -87,11 +87,12 @@ These metrics provide more insight than accuracy alone, particularly where class
 
 ### 5.2 Empirical Result (Smoke Run)
 
-On the provided environment (CPU execution), a one-epoch smoke run produced:
+On the provided environment (CPU execution), the following runs were observed:
 
-- Test accuracy: 0.876
+- 1 epoch (smoke run): test accuracy 0.876
+- 10 epochs: validation accuracy 0.9163, test accuracy 0.9233
 
-This surpasses the 0.80 requirement and indicates that the approach is effective. With additional epochs, the same configuration typically converges further and yields improved calibration and per-class performance.
+Both results surpass the 0.80 requirement. The 10-epoch run demonstrates improved convergence relative to the smoke run, consistent with the expected learning dynamics of CNNs on Fashion-MNIST.
 
 All evaluation outputs are saved per run to a timestamped folder under `runs/`, including `metrics.json`, `confusion_matrix.png`, and the best model checkpoint.
 
@@ -114,4 +115,3 @@ This section delivered a reproducible PyTorch pipeline for Fashion-MNIST classif
 1. Xiao, H., Rasul, K., and Vollgraf, R. (2017). Fashion-MNIST: a Novel Image Dataset for Benchmarking Machine Learning Algorithms.
 1. Goodfellow, I., Bengio, Y., and Courville, A. (2016). *Deep Learning*. MIT Press.
 1. Paszke, A. et al. (2019). PyTorch: An Imperative Style, High-Performance Deep Learning Library. *NeurIPS*.
-
