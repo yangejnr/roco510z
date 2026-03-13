@@ -7,7 +7,10 @@ Implements Section 1 droplet recognition from a video:
 - Counting unique successfully formed droplets
 - Centre of mass / blob centroid (blob) detection
 
-Detailed documentation: `docs/SECTION1.md`
+Documentation:
+
+- `docs/SECTION1.md` (implementation notes)
+- `docs/SECTION1_REPORT.md` (report-style write-up)
 
 ## Setup
 
