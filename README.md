@@ -45,7 +45,7 @@ Outputs:
 
 ## Notes
 
-The coursework brief doesn’t specify exact video characteristics in the PDF, so the
-CLI exposes the most important parameters (radius ranges, thresholds, tracking).
+This repo includes example high-speed videos (`droplets_.mp4`, `droplets_1.mp4`) and
+the CLI parameters are tuned to run on them (see `docs/SECTION1.md`).
 
 Git HTTPS push guide: `docs/GIT_HTTPS_PUSH.md`

@@ -4,6 +4,6 @@ __pycache__/
 .pytest_cache/
 
 outputs/
-*.mp4
-*.avi
-
+# Keep input videos under version control, but ignore generated videos under outputs/.
+outputs/*.mp4
+outputs/*.avi
