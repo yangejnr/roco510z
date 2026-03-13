@@ -5,7 +5,9 @@ Implements Section 1 droplet recognition from a video:
 - Inner droplet detection
 - Outer wrap detection
 - Counting unique successfully formed droplets
-- Centre of mass / blob centroid detection
+- Centre of mass / blob centroid (blob) detection
+
+Detailed documentation: `docs/SECTION1.md`
 
 ## Setup
 
@@ -45,3 +47,5 @@ Outputs:
 
 The coursework brief doesn’t specify exact video characteristics in the PDF, so the
 CLI exposes the most important parameters (radius ranges, thresholds, tracking).
+
+Git HTTPS push guide: `docs/GIT_HTTPS_PUSH.md`
