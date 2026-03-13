@@ -17,6 +17,10 @@ Given a video, the script writes:
 - `detections.csv`: per-frame detections (outer + inner geometry, blob COMs)
 - `tracks.csv`: per-track summary (used for unique droplet counting)
 - `annotated.mp4`: overlay video (optional) with circles + COM points
+- If `--export-split` is enabled:
+  - `outer_wrap.csv`: outer wrap recognition outputs only
+  - `inner_droplet.csv`: inner droplet recognition outputs only
+  - `outer_only.mp4` and `inner_only.mp4`: overlay videos for each task
 
 All coordinates are in **full-frame pixel coordinates** even if `--roi` / `--auto-roi` is used.
 
@@ -66,6 +70,7 @@ Optional alternative counting mode:
 Use `python droplet_section1.py --help` for the full list. Practically:
 
 - `--auto-roi`: recommended for these high-speed videos; reduces false detections.
+- `--export-split`: writes separate inner/outer CSVs and overlay videos (task-specific outputs).
 - `--progress-every`: prints progress every N frames while running.
 - `--quiet`: suppresses stdout output (useful for batch runs).
 - `--outer-min-radius`, `--outer-max-radius`: constrain wrap size in pixels.
@@ -125,7 +130,7 @@ These were the settings used during development:
 . .venv/bin/activate
 
 python droplet_section1.py --video droplets_.mp4 --out outputs/latest_droplets \
-  --annotate --auto-roi \
+  --annotate --auto-roi --export-split \
   --outer-min-radius 10 --outer-max-radius 120 \
   --inner-min-radius 3 --inner-max-radius 90 \
   --hough-min-dist 25 --outer-acc-thresh 28 --inner-acc-thresh 18 \
@@ -133,7 +138,7 @@ python droplet_section1.py --video droplets_.mp4 --out outputs/latest_droplets \
   --min-success-frames 3 --progress-every 50
 
 python droplet_section1.py --video droplets_1.mp4 --out outputs/latest_droplets1 \
-  --annotate --auto-roi \
+  --annotate --auto-roi --export-split \
   --outer-min-radius 10 --outer-max-radius 120 \
   --inner-min-radius 3 --inner-max-radius 90 \
   --hough-min-dist 25 --outer-acc-thresh 28 --inner-acc-thresh 18 \

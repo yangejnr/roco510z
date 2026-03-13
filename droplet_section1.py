@@ -484,6 +484,48 @@ def _draw_detection(frame: np.ndarray, det: Detection, track_id: Optional[int]) 
         cv2.LINE_AA,
     )
 
+def _draw_outer_only(frame: np.ndarray, det: Detection, track_id: Optional[int]) -> None:
+    outer = det.outer
+    color = (0, 200, 0) if det.success else (0, 0, 255)
+    cv2.circle(frame, (int(round(outer.cx)), int(round(outer.cy))), int(round(outer.r)), color, 2)
+    ox, oy = det.com_outer
+    cv2.circle(frame, (int(round(ox)), int(round(oy))), 3, (255, 255, 255), -1)
+    if track_id is not None:
+        cv2.putText(
+            frame,
+            f"id={track_id}",
+            (int(round(outer.cx + outer.r + 5)), int(round(outer.cy))),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
+
+
+def _draw_inner_only(frame: np.ndarray, det: Detection, track_id: Optional[int]) -> None:
+    # Draw outer wrap lightly for context, and inner droplet prominently if present.
+    outer = det.outer
+    cv2.circle(frame, (int(round(outer.cx)), int(round(outer.cy))), int(round(outer.r)), (120, 120, 120), 1)
+    if det.inner is None:
+        return
+    inner = det.inner
+    cv2.circle(frame, (int(round(inner.cx)), int(round(inner.cy))), int(round(inner.r)), (0, 255, 255), 2)
+    if det.com_inner is not None:
+        ix, iy = det.com_inner
+        cv2.circle(frame, (int(round(ix)), int(round(iy))), 3, (0, 255, 255), -1)
+    if track_id is not None:
+        cv2.putText(
+            frame,
+            f"id={track_id}",
+            (int(round(inner.cx + inner.r + 5)), int(round(inner.cy))),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+
 
 def _write_detections_csv(path: Path, det_rows: Iterable[dict]) -> None:
     fieldnames = [
@@ -510,6 +552,45 @@ def _write_detections_csv(path: Path, det_rows: Iterable[dict]) -> None:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         for row in det_rows:
+            w.writerow(row)
+
+def _write_outer_csv(path: Path, rows: Iterable[dict]) -> None:
+    fieldnames = [
+        "frame",
+        "track_id",
+        "success",
+        "outer_cx",
+        "outer_cy",
+        "outer_r",
+        "com_outer_x",
+        "com_outer_y",
+        "blob_outer_area_px",
+    ]
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for row in rows:
+            w.writerow(row)
+
+
+def _write_inner_csv(path: Path, rows: Iterable[dict]) -> None:
+    fieldnames = [
+        "frame",
+        "track_id",
+        "success",
+        "inner_cx",
+        "inner_cy",
+        "inner_r",
+        "com_inner_x",
+        "com_inner_y",
+        "blob_inner_area_px",
+        "center_offset_px",
+        "inner_outer_ratio",
+    ]
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for row in rows:
             w.writerow(row)
 
 
@@ -567,6 +648,11 @@ def main() -> int:
     ap.add_argument("--video", required=True, help="Path to input video (e.g. .mp4)")
     ap.add_argument("--out", default="outputs", help="Output directory")
     ap.add_argument("--annotate", action="store_true", help="Write annotated overlay video")
+    ap.add_argument(
+        "--export-split",
+        action="store_true",
+        help="Also export separate inner/outer CSVs and overlay videos (inner_only.mp4, outer_only.mp4)",
+    )
     ap.add_argument("--quiet", action="store_true", help="Suppress stdout status output")
     ap.add_argument("--progress-every", type=int, default=0, help="Print progress every N frames (0=off)")
     ap.add_argument("--max-frames", type=int, default=0, help="Process at most N frames (0 = all)")
@@ -621,11 +707,19 @@ def main() -> int:
     frame_size = (w, h)
 
     writer = None
+    writer_outer = None
+    writer_inner = None
     if args.annotate:
         writer = _writer_for(out_dir / "annotated.mp4", fps=fps, frame_size_wh=frame_size)
+        if args.export_split:
+            writer_outer = _writer_for(out_dir / "outer_only.mp4", fps=fps, frame_size_wh=frame_size)
+            writer_inner = _writer_for(out_dir / "inner_only.mp4", fps=fps, frame_size_wh=frame_size)
 
     tracker = DropletTracker(match_dist_px=args.match_dist, max_gap_frames=args.max_gap_frames)
     det_rows: list[dict] = []
+    outer_rows: list[dict] = []
+    inner_rows: list[dict] = []
+    inner_present_frames = 0
 
     count_line_y = float(args.count_line_y)
     formed_count = 0
@@ -780,6 +874,38 @@ def main() -> int:
                 }
             )
 
+            outer_rows.append(
+                {
+                    "frame": d.frame_idx,
+                    "track_id": "" if tid is None else tid,
+                    "success": int(d.success),
+                    "outer_cx": f"{d.outer.cx:.3f}",
+                    "outer_cy": f"{d.outer.cy:.3f}",
+                    "outer_r": f"{d.outer.r:.3f}",
+                    "com_outer_x": f"{d.com_outer[0]:.3f}",
+                    "com_outer_y": f"{d.com_outer[1]:.3f}",
+                    "blob_outer_area_px": int(d.blob_outer_area_px),
+                }
+            )
+
+            if inner is not None:
+                inner_present_frames += 1
+                inner_rows.append(
+                    {
+                        "frame": d.frame_idx,
+                        "track_id": "" if tid is None else tid,
+                        "success": int(d.success),
+                        "inner_cx": f"{inner.cx:.3f}",
+                        "inner_cy": f"{inner.cy:.3f}",
+                        "inner_r": f"{inner.r:.3f}",
+                        "com_inner_x": "" if comi is None else f"{comi[0]:.3f}",
+                        "com_inner_y": "" if comi is None else f"{comi[1]:.3f}",
+                        "blob_inner_area_px": "" if d.blob_inner_area_px is None else int(d.blob_inner_area_px),
+                        "center_offset_px": center_offset,
+                        "inner_outer_ratio": ratio,
+                    }
+                )
+
         if writer is not None:
             for d, tid in zip(dets, assignments):
                 if tid is None:
@@ -791,10 +917,30 @@ def main() -> int:
                 rx, ry, rw, rh = roi
                 cv2.rectangle(frame, (rx, ry), (rx + rw, ry + rh), (255, 255, 255), 1)
             writer.write(frame)
+        if writer_outer is not None:
+            fr = frame.copy()
+            for d, tid in zip(dets, assignments):
+                _draw_outer_only(fr, d, tid)
+            if roi is not None:
+                rx, ry, rw, rh = roi
+                cv2.rectangle(fr, (rx, ry), (rx + rw, ry + rh), (255, 255, 255), 1)
+            writer_outer.write(fr)
+        if writer_inner is not None:
+            fr = frame.copy()
+            for d, tid in zip(dets, assignments):
+                _draw_inner_only(fr, d, tid)
+            if roi is not None:
+                rx, ry, rw, rh = roi
+                cv2.rectangle(fr, (rx, ry), (rx + rw, ry + rh), (255, 255, 255), 1)
+            writer_inner.write(fr)
 
     cap.release()
     if writer is not None:
         writer.release()
+    if writer_outer is not None:
+        writer_outer.release()
+    if writer_inner is not None:
+        writer_inner.release()
 
     # Aggregate success count (unique tracks meeting success frame threshold).
     tracks = list(tracker.tracks.values())
@@ -805,6 +951,9 @@ def main() -> int:
 
     _write_detections_csv(out_dir / "detections.csv", det_rows)
     _write_tracks_csv(out_dir / "tracks.csv", tracks, min_success_frames=args.min_success_frames)
+    if args.export_split:
+        _write_outer_csv(out_dir / "outer_wrap.csv", outer_rows)
+        _write_inner_csv(out_dir / "inner_droplet.csv", inner_rows)
 
     summary = {
         "video": os.path.abspath(args.video),
@@ -815,11 +964,18 @@ def main() -> int:
         "min_success_frames": int(args.min_success_frames),
         "successful_tracks": int(success_count),
         "success_formed_count": int(formed_count),
+        "outer_detections_total": int(len(outer_rows)),
+        "inner_detections_total": int(len(inner_rows)),
+        "inner_present_frames": int(inner_present_frames),
         "count_line_y": None if count_line_y < 0 else float(count_line_y),
         "outputs": {
             "detections_csv": str((out_dir / "detections.csv").resolve()),
             "tracks_csv": str((out_dir / "tracks.csv").resolve()),
             "annotated_mp4": None if not args.annotate else str((out_dir / "annotated.mp4").resolve()),
+            "outer_wrap_csv": None if not args.export_split else str((out_dir / "outer_wrap.csv").resolve()),
+            "inner_droplet_csv": None if not args.export_split else str((out_dir / "inner_droplet.csv").resolve()),
+            "outer_only_mp4": None if not (args.annotate and args.export_split) else str((out_dir / "outer_only.mp4").resolve()),
+            "inner_only_mp4": None if not (args.annotate and args.export_split) else str((out_dir / "inner_only.mp4").resolve()),
         },
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
