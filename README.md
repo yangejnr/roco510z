@@ -11,6 +11,9 @@ Documentation:
 
 - `docs/SECTION1.md` (implementation notes)
 - `docs/SECTION1_REPORT.md` (report-style write-up)
+- `docs/SECTION2.md` (Fashion-MNIST implementation)
+- `docs/SECTION2_TECHNICAL.md` (technical documentation)
+- `docs/SECTION2_REPORT.md` (report-style write-up)
 
 ## Setup
 
